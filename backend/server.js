@@ -23,13 +23,23 @@ const API_KEY =
 const products = await loadProducts();
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((value) => value.trim())
-  : "*";
+  : [];
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-  }),
-);
+    callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+  },
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (request, response) => {
